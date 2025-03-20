@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Cat from "./components/Cat";
 import PlaybackControl from "./components/PlaybackControl";
-import { useAudioPlayback } from "./hooks/useAudioPlaybackNaive";
+import { useAudioPlayback } from "./hooks/useAudioPlayback";
 
 function App() {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -19,7 +19,7 @@ function App() {
         <Cat isPlaying={isPlaying} playbackRate={expScale(playbackRate)} />
       </div>
       <PlaybackControl
-        min={0.1}
+        min={-1.0}
         max={3.0}
         playbackRate={playbackRate}
         onPlaybackRateChange={setPlaybackRate}
