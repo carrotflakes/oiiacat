@@ -16,9 +16,11 @@ function App() {
   return (
     <div className="w-dvw h-dvh max-h-dvh p-10 flex flex-col justify-center items-center bg-[#00fc0a] overflow-hidden touch-none select-none">
       <div className="min-h-0 basis-100 grow shrink">
-        <Cat isPlaying={isPlaying} playbackRate={Math.pow(playbackRate, 1.8)} />
+        <Cat isPlaying={isPlaying} playbackRate={expScale(playbackRate)} />
       </div>
       <PlaybackControl
+        min={-3.0}
+        max={3.0}
         playbackRate={playbackRate}
         onPlaybackRateChange={setPlaybackRate}
         onPlayStateChange={setIsPlaying}
@@ -28,3 +30,11 @@ function App() {
 }
 
 export default App;
+
+function expScale(value: number) {
+  return value > 0.001
+    ? Math.pow(value, 1.8)
+    : value < -0.001
+    ? -Math.pow(-value, 1.8)
+    : 0;
+}

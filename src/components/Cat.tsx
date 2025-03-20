@@ -33,7 +33,8 @@ function Cat({
 
       setFrame(
         (prev) =>
-          (prev + dTime * 30 * playbackRateRef.current) % (frames.length - 1)
+          (prev + dTime * 30 * playbackRateRef.current + (frames.length - 1)) %
+          (frames.length - 1)
       );
 
       requestAnimationFrame(updateFrame);
@@ -55,7 +56,8 @@ function Cat({
           image.onload = () => resolve(image);
         });
       })
-    ));
+    )
+  );
 
   const currentFrameIndex = isPlaying ? Math.floor(frame) + 1 : 0;
 

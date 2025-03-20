@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 
 function PlaybackControl({
+  min,max,
   playbackRate,
   onPlaybackRateChange,
   onPlayStateChange,
 }: {
+  min: number;
+  max: number;
   playbackRate: number;
   onPlaybackRateChange: (rate: number) => void;
   onPlayStateChange: (play: boolean) => void;
@@ -19,7 +22,7 @@ function PlaybackControl({
   const handlePointerDown = (e: React.PointerEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    onPlaybackRateChange(0.1 + x * 2.9);
+    onPlaybackRateChange(min + x * (max - min));
     setIsPressing(true);
     e.preventDefault();
     e.stopPropagation();
@@ -30,7 +33,7 @@ function PlaybackControl({
           0,
           Math.min(1, (e.clientX - rect.left) / rect.width)
         );
-        onPlaybackRateChange(0.1 + x * 2.9);
+        onPlaybackRateChange(min + x * (max - min));
       }
     };
 
@@ -57,7 +60,7 @@ function PlaybackControl({
       >
         <div
           className="w-1 h-full border-r-4 border-black/25"
-          style={{ width: `${((playbackRate - 0.1) / 2.9) * 100}%` }}
+          style={{ width: `${((playbackRate - min) / (max - min)) * 100}%` }}
         />
       </div>
     </div>

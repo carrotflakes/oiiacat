@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function useAudioPlayback({ audioUrl, isPlaying, playbackRate }: {
   audioUrl: string;
@@ -6,7 +6,6 @@ export function useAudioPlayback({ audioUrl, isPlaying, playbackRate }: {
   playbackRate: number;
 }) {
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
-  const [sourceNode, setSourceNode] = useState<AudioBufferSourceNode | null>(null);
 
   const [arrayBuffer, setArrayBuffer] = useState<ArrayBuffer | null>(null);
   useEffect(() => {
@@ -30,27 +29,51 @@ export function useAudioPlayback({ audioUrl, isPlaying, playbackRate }: {
     });
   }, [audioContext, arrayBuffer]);
 
-  useEffect(() => {
-    if (isPlaying) {
-      if (!audioContext || !audioBuffer || sourceNode) return;
-      const newSourceNode = audioContext.createBufferSource();
-      newSourceNode.buffer = audioBuffer;
-      newSourceNode.connect(audioContext.destination);
-      newSourceNode.loop = true;
-      newSourceNode.playbackRate.value = playbackRate;
-      newSourceNode.start(0);
-      setSourceNode(newSourceNode);
-    } else {
-      if (sourceNode) {
-        sourceNode.stop();
-        setSourceNode(null);
-      }
-    }
-  }, [audioBuffer, audioContext, isPlaying, playbackRate, sourceNode]);
+  const [scriptProcessorNode, setScriptProcessorNode] = useState<ScriptProcessorNode | null>(null);
+  const playbackRateRef = useRef(playbackRate);
 
   useEffect(() => {
-    if (sourceNode) {
-      sourceNode.playbackRate.value = playbackRate;
+    playbackRateRef.current = playbackRate;
+  }
+    , [playbackRate]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      if (!audioContext || !audioBuffer || scriptProcessorNode) return;
+      const newScriptProcessorNode = audioContext.createScriptProcessor(4096, 1, 1);
+      newScriptProcessorNode.connect(audioContext.destination);
+      const buffer = audioBuffer.getChannelData(0);
+      function getFrame(i: number) {
+        let start = i;
+        while (0 < start && !(buffer[start - 1] <= 0 && 0 < buffer[start])) {
+          start -= 1;
+        }
+        let end = Math.min(i + 1000, buffer.length - 1);
+        while (end < buffer.length && !(buffer[end] <= 0 && 0 < buffer[end + 1])) {
+          end += 1;
+        }
+        return { start, end };
+      }
+      let currentFrame = getFrame(0);
+      let time = 0;
+      newScriptProcessorNode.onaudioprocess = (e) => {
+        const outputBuffer = e.outputBuffer.getChannelData(0);
+        const dTime = playbackRateRef.current + buffer.length;
+        for (let i = 0; i < outputBuffer.length; i++) {
+          outputBuffer[i] = buffer[currentFrame.start % buffer.length];
+          currentFrame.start += 1;
+          if (currentFrame.start > currentFrame.end) {
+            currentFrame = getFrame(Math.floor(time));
+          }
+          time = (time + dTime) % buffer.length;
+        }
+      };
+      setScriptProcessorNode(newScriptProcessorNode);
+    } else {
+      if (scriptProcessorNode) {
+        scriptProcessorNode.disconnect();
+        setScriptProcessorNode(null);
+      }
     }
-  }, [playbackRate, sourceNode]);
+  }, [isPlaying, audioContext, audioBuffer, scriptProcessorNode]);
 }
