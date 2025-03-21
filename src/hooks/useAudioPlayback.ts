@@ -19,6 +19,9 @@ export function useAudioPlayback({ audioUrl, isPlaying, playbackRate }: {
   useEffect(() => {
     if (!isPlaying || audioContext) return;
     const ctx = new window.AudioContext();
+    ctx.onstatechange = () => {
+      console.log('AudioContext state changed:', ctx.state);
+    };
     ctx.audioWorklet.addModule('/audio-processor.js').then(() => {
       setAudioContext(ctx);
     });
@@ -43,6 +46,10 @@ export function useAudioPlayback({ audioUrl, isPlaying, playbackRate }: {
   useEffect(() => {
     if (isPlaying) {
       if (!audioContext || !audioBuffer || workletNode) return;
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+
       const node = new AudioWorkletNode(audioContext, 'audio-frame-processor');
       node.connect(audioContext.destination);
 
