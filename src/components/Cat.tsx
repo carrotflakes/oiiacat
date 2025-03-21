@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const frames = [1, ...Array.from({ length: 246 - 189 }, (_, i) => i + 189)];
 
@@ -47,17 +47,23 @@ function Cat({
   }, [isPlaying]);
 
   // Preload images
-  useRef(
-    Promise.all(
-      frames.map((frame) => {
-        return new Promise((resolve) => {
-          const image = new Image();
-          image.src = getImagePath(frame);
-          image.onload = () => resolve(image);
-        });
-      })
-    )
-  );
+  useEffect(() => {
+    for (const frame of frames) {
+      const preload = document.createElement("link");
+      preload.className = "cat-image-preload";
+      preload.rel = "preload";
+      preload.href = getImagePath(frame);
+      preload.as = "image";
+      document.head.appendChild(preload);
+    }
+
+    return () => {
+      const preloads = document.querySelectorAll(".cat-image-preload");
+      for (const preload of preloads) {
+        preload.remove();
+      }
+    };
+  }, []);
 
   const currentFrameIndex = isPlaying ? Math.floor(frame) + 1 : 0;
 
